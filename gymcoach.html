@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gym Coach">
+<title>Gym Coach</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { background: #0d0d1a; color: #f0f0f0; font-family: -apple-system, 'Segoe UI', sans-serif; min-height: 100vh; padding-bottom: env(safe-area-inset-bottom); }
+  button { font-family: inherit; }
+  a { font-family: inherit; }
+
+  #app { max-width: 480px; margin: 0 auto; }
+
+  /* HEADER */
+  .header { background: linear-gradient(135deg,#0d0d1a 0%,#1a1a35 100%); border-bottom: 1px solid #222244; padding: 16px 16px 12px; position: sticky; top: 0; z-index: 10; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .logo { font-size: 16px; font-weight: 900; letter-spacing: 2px; color: #fff; }
+  .header-right { display: flex; gap: 6px; align-items: center; }
+  .hbtn { background: none; border: 1px solid #333; border-radius: 10px; padding: 7px 10px; color: #888; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .clock { font-size: 11px; color: #666; font-family: monospace; }
+  .day-tabs { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .day-tabs::-webkit-scrollbar { display: none; }
+  .day-tab { padding: 6px 11px; border-radius: 20px; border: 1.5px solid #333; background: transparent; color: #555; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.2s; }
+  .day-tab.active { }
+
+  /* CARDS */
+  .content { padding: 16px; }
+  .card { background: #12122a; border-radius: 16px; padding: 16px; margin-bottom: 14px; border: 1px solid #222244; }
+  .hero-card { border-radius: 20px; padding: 22px; margin-bottom: 16px; text-align: center; }
+  .hero-emoji { font-size: 42px; margin-bottom: 6px; }
+  .hero-title { font-size: 30px; font-weight: 900; letter-spacing: 3px; margin-bottom: 4px; }
+  .hero-sub { color: #888; font-size: 13px; margin-bottom: 18px; }
+
+  /* LABELS */
+  .section-label { font-size: 10px; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 8px; color: #555; }
+  .section-hint { font-size: 11px; color: #555; margin-bottom: 10px; }
+
+  /* EXERCISE ROWS */
+  .ex-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 12px; border-radius: 10px; border: 1px solid #1e1e3a; margin-bottom: 7px; transition: all 0.2s; cursor: pointer; }
+  .ex-row.active { }
+  .ex-name { font-size: 13px; color: #666; }
+  .ex-name.active { font-weight: 700; color: #fff; }
+  .ex-meta { font-size: 11px; color: #555; margin-top: 2px; }
+  .ex-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .weight-tag { border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; }
+  .ex-actions { display: flex; gap: 5px; font-size: 13px; }
+  .edit-icon { font-size: 12px; color: #444; }
+
+  /* BUTTONS */
+  .btn { display: block; width: 100%; padding: 15px; border-radius: 13px; border: none; font-size: 15px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px; margin-bottom: 9px; transition: opacity 0.15s; }
+  .btn:active { opacity: 0.8; }
+  .btn-outline { background: transparent !important; }
+  .btn-row { display: flex; gap: 10px; }
+  .btn-row .btn { flex: 1; }
+
+  /* BADGE */
+  .badge { display: inline-block; border-radius: 20px; padding: 6px 16px; font-weight: 800; font-size: 15px; }
+
+  /* DOTS */
+  .dots { display: flex; gap: 8px; justify-content: center; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: #222; border: 2px solid #444; transition: all 0.2s; }
+  .dot.filled { }
+
+  /* CIRCLE TIMER */
+  .timer-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0 14px; }
+
+  /* ELAPSED */
+  .elapsed { font-family: monospace; font-size: 12px; color: #666; margin-bottom: 12px; }
+
+  /* MODAL OVERLAY */
+  .modal-overlay { position: fixed; inset: 0; background: #000000dd; z-index: 100; display: flex; align-items: flex-end; justify-content: center; }
+  .modal-sheet { background: #12122a; border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-close { background: none; border: none; color: #555; font-size: 22px; cursor: pointer; }
+  .modal-sublabel { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+  .modal-title { font-size: 17px; font-weight: 800; color: #fff; }
+
+  /* GRID 2 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .field label { font-size: 11px; color: #666; display: block; margin-bottom: 4px; }
+  .field input { width: 100%; background: #0d0d1a; border-radius: 8px; padding: 10px 12px; color: #fff; font-size: 16px; font-weight: 700; outline: none; border: 1px solid #333; }
+  .btn-pair { display: flex; gap: 10px; }
+  .btn-cancel { flex: 1; padding: 14px; border-radius: 12px; border: 1px solid #333; background: transparent; color: #888; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-save { flex: 2; padding: 14px; border-radius: 12px; border: none; font-size: 14px; font-weight: 800; cursor: pointer; color: #000; }
+
+  /* MEDIA MODAL */
+  .media-gif { width: 100%; max-height: 220px; object-fit: contain; display: block; border-radius: 12px; background: #0d0d1a; margin-bottom: 12px; }
+  .media-gif-placeholder { background: #0d0d1a; border-radius: 12px; height: 130px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 1px dashed #333; color: #444; flex-direction: column; gap: 6px; font-size: 12px; }
+  .stat-grid { display: flex; gap: 8px; margin-bottom: 14px; }
+  .stat-box { flex: 1; border-radius: 10px; padding: 8px 4px; text-align: center; }
+  .stat-label { font-size: 10px; color: #666; margin-bottom: 2px; }
+  .stat-val { font-size: 14px; font-weight: 800; }
+  .yt-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 14px; border-radius: 13px; background: #FF0000; color: #fff; font-size: 15px; font-weight: 800; text-decoration: none; }
+
+  /* CLOUD TABS */
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid #333; background: transparent; color: #555; font-size: 13px; font-weight: 800; cursor: pointer; }
+  .tab.active { }
+  .export-box { background: #0d0d1a; border-radius: 10px; border: 1px solid #222; padding: 12px; max-height: 160px; overflow-y: auto; margin-bottom: 14px; font-family: monospace; font-size: 10px; color: #666; white-space: pre-wrap; word-break: break-all; }
+  .import-area { width: 100%; background: #0d0d1a; border: 1px solid #333; border-radius: 10px; padding: 12px; color: #fff; font-size: 12px; font-family: monospace; resize: none; outline: none; min-height: 140px; margin-bottom: 10px; }
+  .msg-ok { color: #1AE84A; font-size: 12px; margin-bottom: 10px; }
+  .msg-err { color: #E8441A; font-size: 12px; margin-bottom: 10px; }
+
+  /* HISTORY */
+  .hist-session { background: #12122a; border-radius: 14px; padding: 16px; margin-bottom: 12px; }
+  .hist-top { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .hist-muscle { font-weight: 700; }
+  .hist-date { font-size: 12px; color: #555; }
+  .hist-meta { font-size: 12px; color: #888; margin-bottom: 8px; }
+  .hist-weights { display: flex; flex-wrap: wrap; gap: 6px; }
+  .hist-tag { border-radius: 8px; padding: 3px 10px; font-size: 11px; font-weight: 700; }
+
+  /* DONE */
+  .done-card { text-align: center; padding: 36px 20px; }
+  .done-emoji { font-size: 56px; margin-bottom: 12px; }
+  .done-title { font-size: 26px; font-weight: 900; margin-bottom: 6px; }
+  .done-sub { color: #888; margin-bottom: 20px; }
+  .done-tips { border-radius: 12px; padding: 14px; margin-bottom: 18px; text-align: left; }
+  .done-tips-label { font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+  .done-tips-body { font-size: 13px; color: #bbb; line-height: 1.9; }
+
+  /* PROGRESS MARKERS */
+  .prog-check { color: #1AE84A; }
+  .prog-current { }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────────────
+const EXERCISE_MEDIA = {
+  "Press banca plano con barra": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Barbell-Bench-Press.gif", yt: "https://www.youtube.com/results?search_query=press+banca+plano+barra+tecnica" },
+  "Press banca inclinado mancuernas": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Incline-Dumbbell-Press.gif", yt: "https://www.youtube.com/results?search_query=press+inclinado+mancuernas+tecnica" },
+  "Aperturas con mancuernas": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Dumbbell-Flyes.gif", yt: "https://www.youtube.com/results?search_query=aperturas+mancuernas+pecho+tecnica" },
+  "Fondos entre bancos": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Bench-Dips.gif", yt: "https://www.youtube.com/results?search_query=fondos+entre+bancos+triceps+tecnica" },
+  "Pullover con mancuerna": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Dumbbell-Pullover.gif", yt: "https://www.youtube.com/results?search_query=pullover+mancuerna+tecnica" },
+  "Remo con barra": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Barbell-Row.gif", yt: "https://www.youtube.com/results?search_query=remo+barra+espalda+tecnica" },
+  "Remo con mancuerna (un brazo)": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/One-Arm-Dumbbell-Row.gif", yt: "https://www.youtube.com/results?search_query=remo+mancuerna+un+brazo+tecnica" },
+  "Remo al mentón barra W": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Upright-Row.gif", yt: "https://www.youtube.com/results?search_query=remo+al+menton+barra+tecnica" },
+  "Encogimientos mancuernas": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Dumbbell-Shrug.gif", yt: "https://www.youtube.com/results?search_query=encogimientos+mancuernas+trapecios" },
+  "Sentadilla libre con barra": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Barbell-Squat.gif", yt: "https://www.youtube.com/results?search_query=sentadilla+libre+barra+tecnica" },
+  "Peso muerto rumano con barra": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Romanian-Deadlift.gif", yt: "https://www.youtube.com/results?search_query=peso+muerto+rumano+tecnica" },
+  "Zancadas con mancuernas": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Dumbbell-Lunges.gif", yt: "https://www.youtube.com/results?search_query=zancadas+mancuernas+tecnica" },
+  "Sentadilla sumo mancuerna": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Sumo-Squat.gif", yt: "https://www.youtube.com/results?search_query=sentadilla+sumo+mancuerna+tecnica" },
+  "Elevaciones de gemelos": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Standing-Calf-Raise.gif", yt: "https://www.youtube.com/results?search_query=elevaciones+gemelos+de+pie+tecnica" },
+  "Press militar con barra": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Barbell-Overhead-Press.gif", yt: "https://www.youtube.com/results?search_query=press+militar+barra+tecnica" },
+  "Elevaciones laterales mancuernas": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Dumbbell-Lateral-Raise.gif", yt: "https://www.youtube.com/results?search_query=elevaciones+laterales+mancuernas+tecnica" },
+  "Elevaciones frontales alternas": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Dumbbell-Front-Raise.gif", yt: "https://www.youtube.com/results?search_query=elevaciones+frontales+mancuernas+tecnica" },
+  "Pájaro (deltoides posterior)": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Dumbbell-Rear-Delt-Fly.gif", yt: "https://www.youtube.com/results?search_query=pajaro+deltoides+posterior+tecnica" },
+  "Curl con barra W": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/EZ-Bar-Curl.gif", yt: "https://www.youtube.com/results?search_query=curl+barra+w+ez+biceps+tecnica" },
+  "Curl martillo alternado": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Hammer-Curl.gif", yt: "https://www.youtube.com/results?search_query=curl+martillo+alternado+tecnica" },
+  "Curl concentrado": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Concentration-Curl.gif", yt: "https://www.youtube.com/results?search_query=curl+concentrado+biceps+tecnica" },
+  "Press francés barra W": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/EZ-Bar-Skull-Crusher.gif", yt: "https://www.youtube.com/results?search_query=press+frances+skull+crusher+triceps+tecnica" },
+  "Extensión tríceps sobre cabeza": { gif: "https://muscles.wiki/wp-content/uploads/2022/09/Overhead-Dumbbell-Extension.gif", yt: "https://www.youtube.com/results?search_query=extension+triceps+sobre+cabeza+mancuerna+tecnica" },
+};
+
+const DEFAULT_PLAN = {
+  0: { name:"PECHO", emoji:"🏋️", color:"#E8441A",
+    warmup:[{name:"Saltos en el lugar",duration:60},{name:"Rotaciones de hombros",duration:30},{name:"Rotaciones de cadera",duration:30},{name:"Sentadillas sin peso",duration:30},{name:"Press liviano (50%)",duration:60}],
+    exercises:[{name:"Press banca plano con barra",sets:4,reps:"10-12",rest:60,weight:0},{name:"Press banca inclinado mancuernas",sets:3,reps:"10-12",rest:60,weight:0},{name:"Aperturas con mancuernas",sets:3,reps:"12-15",rest:45,weight:0},{name:"Fondos entre bancos",sets:3,reps:"Fallo",rest:45,weight:0},{name:"Pullover con mancuerna",sets:2,reps:"12",rest:45,weight:0}]},
+  1: { name:"ESPALDA", emoji:"💪", color:"#1A6BE8",
+    warmup:[{name:"Saltos en el lugar",duration:60},{name:"Rotaciones de hombros",duration:30},{name:"Rotaciones de cadera",duration:30},{name:"Sentadillas sin peso",duration:30},{name:"Remo liviano (50%)",duration:60}],
+    exercises:[{name:"Remo con barra",sets:4,reps:"10-12",rest:60,weight:0},{name:"Remo con mancuerna (un brazo)",sets:3,reps:"10-12 c/lado",rest:45,weight:0},{name:"Remo al mentón barra W",sets:3,reps:"12",rest:45,weight:0},{name:"Pullover con mancuerna",sets:3,reps:"12",rest:45,weight:0},{name:"Encogimientos mancuernas",sets:3,reps:"15",rest:30,weight:0}]},
+  2: { name:"PIERNAS", emoji:"🦵", color:"#1AE84A",
+    warmup:[{name:"Saltos en el lugar",duration:60},{name:"Rotaciones de cadera",duration:30},{name:"Círculos de rodilla",duration:30},{name:"Sentadillas sin peso",duration:60},{name:"Peso muerto liviano (50%)",duration:60}],
+    exercises:[{name:"Sentadilla libre con barra",sets:4,reps:"10-12",rest:90,weight:0},{name:"Peso muerto rumano con barra",sets:3,reps:"10-12",rest:60,weight:0},{name:"Zancadas con mancuernas",sets:3,reps:"12 c/lado",rest:60,weight:0},{name:"Sentadilla sumo mancuerna",sets:3,reps:"15",rest:45,weight:0},{name:"Elevaciones de gemelos",sets:4,reps:"20",rest:30,weight:0}]},
+  3: { name:"HOMBROS", emoji:"🔱", color:"#E8C51A",
+    warmup:[{name:"Saltos en el lugar",duration:60},{name:"Rotaciones de hombros (amplio)",duration:60},{name:"Rotaciones de muñeca y codo",duration:30},{name:"Sentadillas sin peso",duration:30},{name:"Press liviano (50%)",duration:60}],
+    exercises:[{name:"Press militar con barra",sets:4,reps:"10-12",rest:60,weight:0},{name:"Elevaciones laterales mancuernas",sets:4,reps:"12-15",rest:45,weight:0},{name:"Elevaciones frontales alternas",sets:3,reps:"12 c/lado",rest:45,weight:0},{name:"Pájaro (deltoides posterior)",sets:3,reps:"12-15",rest:45,weight:0},{name:"Remo al mentón barra W",sets:2,reps:"12",rest:45,weight:0}]},
+  4: { name:"BRAZOS", emoji:"💥", color:"#C51AE8",
+    warmup:[{name:"Saltos en el lugar",duration:60},{name:"Rotaciones de muñeca y codo",duration:60},{name:"Rotaciones de hombros",duration:30},{name:"Sentadillas sin peso",duration:30},{name:"Curl liviano (50%)",duration:60}],
+    exercises:[{name:"Curl con barra W",sets:4,reps:"10-12",rest:60,weight:0},{name:"Curl martillo alternado",sets:3,reps:"12 c/lado",rest:45,weight:0},{name:"Curl concentrado",sets:3,reps:"12",rest:45,weight:0},{name:"Press francés barra W",sets:4,reps:"10-12",rest:60,weight:0},{name:"Extensión tríceps sobre cabeza",sets:3,reps:"12",rest:45,weight:0},{name:"Fondos entre bancos",sets:3,reps:"Fallo",rest:45,weight:0}]}
+};
+
+const COOLDOWN = [
+  {name:"Pecho — manos atrás, pecho al frente",duration:30},
+  {name:"Espalda — abrazo cruzado y gira",duration:30},
+  {name:"Cuádriceps — talón al glúteo",duration:30},
+  {name:"Isquiotibiales — pierna extendida",duration:30},
+  {name:"Hombros — brazo cruzado al pecho",duration:30},
+  {name:"Tríceps — codo sobre la cabeza",duration:30},
+  {name:"Cuello — oreja al hombro c/lado",duration:30}
+];
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+function loadPlan() { try { const r = localStorage.getItem('gc_plan'); if(r) return JSON.parse(r); } catch(_){} return JSON.parse(JSON.stringify(DEFAULT_PLAN)); }
+function savePlan(p) { try { localStorage.setItem('gc_plan', JSON.stringify(p)); } catch(_){} }
+function loadHistory() { try { const r = localStorage.getItem('gc_hist'); if(r) return JSON.parse(r); } catch(_){} return []; }
+function saveHistory(h) { try { localStorage.setItem('gc_hist', JSON.stringify(h.slice(-60))); } catch(_){} }
+
+let plan = loadPlan();
+let history = loadHistory();
+
+const todayNum = new Date().getDay();
+const dayMap = [null,0,1,2,3,4,null];
+let selectedDay = (dayMap[todayNum] != null) ? dayMap[todayNum] : 0;
+
+let view = 'home'; // home | workout | history
+let phase = 'idle'; // idle | warmup | workout | rest | cooldown | done
+let warmupIdx = 0, exIdx = 0, setIdx = 0, cdIdx = 0;
+let timer = 0, totalTimer = 0, elapsed = 0, setsCompleted = 0;
+let running = false;
+let timerInterval = null, elapsedInterval = null;
+let editingExIdx = null, mediaExIdx = null;
+let showCloud = false, cloudTab = 'export';
+
+function ft(s) { return Math.floor(s/60)+':'+(s%60).toString().padStart(2,'0'); }
+function todayStr() { return new Date().toLocaleDateString('es-AR'); }
+function getColor() { return plan[selectedDay].color; }
+
+// ─── TIMER LOGIC ─────────────────────────────────────────────────────────────
+function startTimer(sec) {
+  clearInterval(timerInterval);
+  timer = sec; totalTimer = sec; running = true;
+  timerInterval = setInterval(() => { timer--; if(timer<=0){clearInterval(timerInterval);running=false;onTimerEnd();} else render(); }, 1000);
+}
+function pauseResumeTimer() {
+  if(running) { clearInterval(timerInterval); running=false; render(); }
+  else { timerInterval = setInterval(()=>{ timer--; if(timer<=0){clearInterval(timerInterval);running=false;onTimerEnd();}else render();},1000); running=true; render(); }
+}
+function skipTimer() { clearInterval(timerInterval); running=false; timer=0; onTimerEnd(); }
+
+function startElapsed() { clearInterval(elapsedInterval); elapsed=0; elapsedInterval=setInterval(()=>{elapsed++;renderElapsed();},1000); }
+function stopElapsed() { clearInterval(elapsedInterval); }
+
+function onTimerEnd() {
+  const wo = plan[selectedDay];
+  if(phase==='warmup') {
+    const next = warmupIdx+1;
+    if(next<wo.warmup.length){ warmupIdx=next; render(); startTimer(wo.warmup[next].duration); }
+    else { phase='workout'; exIdx=0; setIdx=0; render(); }
+  } else if(phase==='rest') { phase='workout'; render(); }
+  else if(phase==='cooldown') {
+    const next=cdIdx+1;
+    if(next<COOLDOWN.length){ cdIdx=next; render(); startTimer(30); }
+    else { finishWorkout(); }
+  }
+}
+
+function startWarmup() {
+  const wo = plan[selectedDay];
+  phase='warmup'; warmupIdx=0; exIdx=0; setIdx=0; setsCompleted=0;
+  view='workout'; render(); startElapsed(); startTimer(wo.warmup[0].duration);
+}
+
+function completeSet() {
+  const wo = plan[selectedDay];
+  const ex = wo.exercises[exIdx];
+  setsCompleted++;
+  const nextSet = setIdx+1;
+  if(nextSet<ex.sets){ setIdx=nextSet; phase='rest'; render(); startTimer(ex.rest); }
+  else {
+    const nextEx=exIdx+1;
+    if(nextEx<wo.exercises.length){ exIdx=nextEx; setIdx=0; phase='rest'; render(); startTimer(ex.rest); }
+    else { phase='cooldown'; cdIdx=0; render(); startTimer(30); }
+  }
+}
+
+function finishWorkout() {
+  stopElapsed(); phase='done';
+  const session = { date:todayStr(), dayIdx:selectedDay, duration:elapsed, setsCompleted, weights: plan[selectedDay].exercises.map(e=>({name:e.name,weight:e.weight||0})) };
+  history.push(session); saveHistory(history); render();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function renderElapsed() {
+  const el = document.getElementById('elapsed-badge');
+  if(el) el.textContent = '⏱ '+ft(elapsed)+' transcurridos';
+}
+
+function svgTimer(sec, tot, color) {
+  const r=54, circ=2*Math.PI*r;
+  const dash = circ*(tot>0?sec/tot:0);
+  return `<svg width="140" height="140" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="#1a1a2e" stroke-width="10"/>
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="${color}" stroke-width="10"
+      stroke-dasharray="${dash} ${circ}" stroke-linecap="round"
+      transform="rotate(-90 60 60)" style="transition:stroke-dasharray 0.5s linear"/>
+    <text x="60" y="55" text-anchor="middle" fill="#fff" font-size="22" font-weight="bold" font-family="monospace">${ft(sec)}</text>
+    <text x="60" y="72" text-anchor="middle" fill="#888" font-size="10" font-family="sans-serif">restante</text>
+  </svg>`;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  const wo = plan[selectedDay];
+  const color = wo.color;
+  const dayNames = ['LUN','MAR','MIÉ','JUE','VIE'];
+
+  const now = new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+
+  const header = (subtitle='') => `
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">GYM COACH${subtitle?` · <span style="color:${color}">${subtitle}</span>`:''}</div>
+        <div class="header-right">
+          ${view==='home'?`<button class="hbtn" onclick="goHistory()">📊 Historial</button><button class="hbtn" onclick="openCloud()">☁️ Sync</button>`:''}
+          <span class="clock">${now}</span>
+        </div>
+      </div>
+      ${view==='home'?`<div class="day-tabs">${[0,1,2,3,4].map(i=>`
+        <button class="day-tab${selectedDay===i?' active':''}" style="${selectedDay===i?`border-color:${plan[i].color};background:${plan[i].color}22;color:${plan[i].color}`:''}" onclick="selectDay(${i})">${dayNames[i]} ${plan[i].emoji}</button>`).join('')}</div>`:''}
+    </div>`;
+
+  if(view==='history') { app.innerHTML = header() + renderHistory(color); attachEvents(); return; }
+
+  if(view==='workout') {
+    let body = '';
+    const elapsed_badge = `<div class="elapsed" id="elapsed-badge">⏱ ${ft(elapsed)} transcurridos</div>`;
+
+    if(phase==='warmup') {
+      const item = wo.warmup[warmupIdx];
+      body = `${elapsed_badge}
+        <div class="card" style="border-color:#222244">
+          <div class="section-label" style="color:${color}">🔥 Entrada en calor ${warmupIdx+1}/${wo.warmup.length}</div>
+          <div style="font-size:20px;font-weight:800;color:#fff;text-align:center;margin-bottom:6px">${item.name}</div>
+          <div class="timer-wrap">
+            ${svgTimer(timer,totalTimer,color)}
+            <div class="btn-row">
+              <button class="btn" style="background:${color};color:#000" onclick="pauseResumeTimer()">${running?'⏸ Pausa':'▶ Continuar'}</button>
+              <button class="btn btn-outline" style="border:2px solid ${color};color:${color}" onclick="skipTimer()">⏭ Saltear</button>
+            </div>
+          </div>
+        </div>`;
+    } else if(phase==='workout') {
+      const ex = wo.exercises[exIdx];
+      const hasMedia = !!EXERCISE_MEDIA[ex.name];
+      body = `${elapsed_badge}
+        <div class="card">
+          <div class="section-label" style="color:${color}">💪 Ejercicio ${exIdx+1}/${wo.exercises.length}</div>
+          <div style="font-size:20px;font-weight:800;color:#fff;text-align:center;margin-bottom:8px">${ex.name}</div>
+          <div class="timer-wrap">
+            ${ex.weight>0?`<div class="weight-tag" style="background:${color}18;border:1px solid ${color}44;color:${color}">🏋️ ${ex.weight} kg</div>`:''}
+            <div class="badge" style="background:${color}22;border:1px solid ${color}55;color:${color}">${ex.reps} reps</div>
+            <div style="color:#888;font-size:13px">Serie ${setIdx+1} de ${ex.sets}</div>
+            <div class="dots">${Array.from({length:ex.sets}).map((_,i)=>`<div class="dot${i<=setIdx?' filled':''}" style="${i<=setIdx?`background:${color};border-color:${color}`:''}"></div>`).join('')}</div>
+            ${hasMedia?`<button onclick="openMedia(${exIdx})" style="display:flex;align-items:center;gap:8px;background:#FF000022;border:1px solid #FF000055;border-radius:10px;padding:8px 16px;color:#FF4444;font-size:13px;font-weight:700;cursor:pointer"><svg width="16" height="12" viewBox="0 0 22 16"><rect width="22" height="16" rx="4" fill="#FF0000"/><polygon points="9,4 9,12 16,8" fill="white"/></svg>¿Cómo se hace?</button>`:''}
+            <button class="btn" style="background:${color};color:#000;margin-bottom:0" onclick="completeSet()">✅ Serie completada</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section-label">Progreso</div>
+          ${wo.exercises.map((e,i)=>`
+            <div class="ex-row${i===exIdx?' active':''}" style="${i===exIdx?`background:${color}18;border-color:${color}55`:''}">
+              <span class="ex-name${i===exIdx?' active':''}">${i<exIdx?'<span class="prog-check">✓</span> ':i===exIdx?'▶ ':''}${e.name}</span>
+              <div style="text-align:right">
+                <div style="font-size:11px;color:${i<exIdx?'#444':color};font-weight:700">${e.sets}×${e.reps}</div>
+                ${e.weight>0?`<div style="font-size:10px;color:#555">${e.weight}kg</div>`:''}
+              </div>
+            </div>`).join('')}
+        </div>`;
+    } else if(phase==='rest') {
+      const nextEx = wo.exercises[exIdx];
+      body = `${elapsed_badge}
+        <div class="card">
+          <div class="section-label" style="color:${color}">⏸ DESCANSO</div>
+          <div style="font-size:20px;font-weight:800;color:#fff;text-align:center;margin-bottom:8px">${nextEx?.name||''}</div>
+          <div class="timer-wrap">
+            ${svgTimer(timer,totalTimer,color)}
+            <div style="color:#888;font-size:13px">Tomá agua 💧</div>
+            <button class="btn btn-outline" style="border:2px solid ${color};color:${color};margin-bottom:0" onclick="skipTimer()">⏭ Listo, siguiente</button>
+          </div>
+        </div>`;
+    } else if(phase==='cooldown') {
+      body = `${elapsed_badge}
+        <div class="card">
+          <div class="section-label" style="color:${color}">🧊 Post-gym ${cdIdx+1}/${COOLDOWN.length}</div>
+          <div style="font-size:20px;font-weight:800;color:#fff;text-align:center;margin-bottom:8px">${COOLDOWN[cdIdx].name}</div>
+          <div class="timer-wrap">
+            ${svgTimer(timer,30,color)}
+            <div style="color:#888;font-size:13px">Mantené la posición, respirá</div>
+            <button class="btn btn-outline" style="border:2px solid ${color};color:${color};margin-bottom:0" onclick="skipTimer()">⏭ Siguiente</button>
+          </div>
+        </div>`;
+    } else if(phase==='done') {
+      body = `<div class="card done-card">
+        <div class="done-emoji">🏆</div>
+        <div class="done-title" style="color:${color}">¡Listo, crack!</div>
+        <div class="done-sub">Tiempo: <strong style="color:#fff">${ft(elapsed)}</strong> · ${setsCompleted} series</div>
+        <div class="done-tips" style="background:${color}11;border:1px solid ${color}33">
+          <div class="done-tips-label" style="color:${color}">📋 Ahora hacé:</div>
+          <div class="done-tips-body">✅ 500ml de agua mínimo<br>✅ Desayuno en 30-45 min<br>✅ 3-4 huevos + tostada + fruta</div>
+        </div>
+        <button class="btn" style="background:${color};color:#000" onclick="goHome()">↩ Volver al inicio</button>
+      </div>`;
+    }
+
+    app.innerHTML = header(wo.name) + `<div class="content">${body}</div>` + renderModals(color);
+    attachEvents(); return;
+  }
+
+  // HOME
+  const homeBody = `
+    <div class="content">
+      <div class="hero-card" style="background:linear-gradient(135deg,${color}22 0%,#12122a 100%);border:1px solid ${color}44">
+        <div class="hero-emoji">${wo.emoji}</div>
+        <div class="hero-title" style="color:${color}">${wo.name}</div>
+        <div class="hero-sub">${wo.exercises.length} ejercicios · 5 min entrada en calor</div>
+        <button class="btn" style="background:${color};color:#000" onclick="startWarmup()">▶ EMPEZAR ENTRENO</button>
+      </div>
+
+      <div class="card">
+        <div class="section-label">🔥 Entrada en calor</div>
+        ${wo.warmup.map(w=>`
+          <div class="ex-row" style="cursor:default">
+            <span class="ex-name">${w.name}</span>
+            <span style="font-size:12px;color:${color};font-weight:700">${ft(w.duration)}</span>
+          </div>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="section-label">💪 Ejercicios</div>
+        <div class="section-hint">▶ tocá para ver cómo · ✏️ para editar peso</div>
+        ${wo.exercises.map((ex,i)=>`
+          <div class="ex-row" style="border-color:#1e1e3a">
+            <div style="flex:1" onclick="openMedia_home(${i})">
+              <div class="ex-name">${ex.name}</div>
+              <div class="ex-meta">${ex.sets} series · ${ex.reps} reps · ${ex.rest}s desc</div>
+            </div>
+            <div class="ex-right">
+              ${ex.weight>0?`<div class="weight-tag" style="background:${color}18;border:1px solid ${color}44;color:${color}">${ex.weight}kg</div>`:''}
+              <div class="ex-actions">
+                <span onclick="openMedia_home(${i})">▶</span>
+                <span class="edit-icon" onclick="openEdit(${i})">✏️</span>
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="section-label">🧊 Post-gym</div>
+        ${COOLDOWN.map(c=>`
+          <div class="ex-row" style="cursor:default">
+            <span class="ex-name">${c.name}</span>
+            <span style="font-size:12px;color:${color};font-weight:700">30s</span>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  app.innerHTML = header() + homeBody + renderModals(color);
+  attachEvents();
+}
+
+function renderHistory(color) {
+  const sorted = [...history].reverse().slice(0,20);
+  return `<div class="content">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="goHome()" style="background:none;border:none;color:#888;font-size:22px;cursor:pointer">←</button>
+      <div style="font-size:18px;font-weight:800;color:#fff">Historial</div>
+    </div>
+    ${sorted.length===0?`<div style="color:#555;text-align:center;margin-top:40px">Todavía no hay entrenos.<br>¡Arrancá hoy!</div>`:''}
+    ${sorted.map(s=>{
+      const dp=plan[s.dayIdx];
+      return `<div class="hist-session" style="border:1px solid ${dp.color}33">
+        <div class="hist-top"><div><span style="font-size:16px;margin-right:6px">${dp.emoji}</span><span class="hist-muscle" style="color:${dp.color}">${dp.name}</span></div><div class="hist-date">${s.date}</div></div>
+        <div class="hist-meta">⏱ ${ft(s.duration)} · ${s.setsCompleted} series</div>
+        <div class="hist-weights">${(s.weights||[]).filter(w=>w.weight>0).map(w=>`<div class="hist-tag" style="background:${dp.color}18;border:1px solid ${dp.color}33;color:${dp.color}">${w.name.split(' ').slice(0,2).join(' ')}: ${w.weight}kg</div>`).join('')}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function renderModals(color) {
+  let out = '';
+
+  // Edit modal
+  if(editingExIdx !== null) {
+    const ex = plan[selectedDay].exercises[editingExIdx];
+    out += `<div class="modal-overlay" onclick="closeEdit()">
+      <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div><div class="modal-sublabel" style="color:${color}">Editar ejercicio</div><div class="modal-title">${ex.name}</div></div>
+          <button class="modal-close" onclick="closeEdit()">✕</button>
+        </div>
+        <div class="grid2">
+          <div class="field"><label>Peso (kg)</label><input id="ed-weight" type="number" step="2.5" value="${ex.weight||0}" style="border-color:${color}44"></div>
+          <div class="field"><label>Descanso (seg)</label><input id="ed-rest" type="number" step="15" value="${ex.rest}" style="border-color:${color}44"></div>
+          <div class="field"><label>Series</label><input id="ed-sets" type="number" step="1" value="${ex.sets}" style="border-color:${color}44"></div>
+          <div class="field"><label>Reps</label><input id="ed-reps" type="text" value="${ex.reps}" style="border-color:${color}44"></div>
+        </div>
+        <div class="btn-pair">
+          <button class="btn-cancel" onclick="closeEdit()">Cancelar</button>
+          <button class="btn-save" style="background:${color}" onclick="saveEdit()">Guardar cambios</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // Media modal
+  if(mediaExIdx !== null) {
+    const ex = plan[selectedDay].exercises[mediaExIdx];
+    const media = EXERCISE_MEDIA[ex.name];
+    out += `<div class="modal-overlay" onclick="closeMedia()">
+      <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <div class="modal-title" style="flex:1;padding-right:10px">${ex.name}</div>
+          <button class="modal-close" onclick="closeMedia()">✕</button>
+        </div>
+        ${media?`<img class="media-gif" src="${media.gif}" alt="${ex.name}" onerror="this.style.display='none';document.getElementById('gif-fallback').style.display='flex'">
+          <div id="gif-fallback" class="media-gif-placeholder" style="display:none"><span style="font-size:32px">🎬</span><span>Miralo en YouTube</span></div>`
+          :`<div class="media-gif-placeholder"><span style="font-size:32px">🎬</span><span>Miralo en YouTube</span></div>`}
+        <div class="stat-grid">
+          ${[['Series',ex.sets],['Reps',ex.reps],['Desc.',ex.rest+'s'],...(ex.weight>0?[['Peso',ex.weight+'kg']]:[])].map(([l,v])=>`
+            <div class="stat-box" style="background:${color}18;border:1px solid ${color}33">
+              <div class="stat-label">${l}</div>
+              <div class="stat-val" style="color:${color}">${v}</div>
+            </div>`).join('')}
+        </div>
+        ${media?`<a class="yt-btn" href="${media.yt}" target="_blank"><svg width="20" height="14" viewBox="0 0 22 16"><rect width="22" height="16" rx="4" fill="#FF0000"/><polygon points="9,4 9,12 16,8" fill="white"/></svg>Ver en YouTube</a>`:''}
+      </div>
+    </div>`;
+  }
+
+  // Cloud modal
+  if(showCloud) {
+    const ac='#A855F7';
+    const exportData = JSON.stringify({version:2,exportedAt:new Date().toISOString(),plan,history},null,2);
+    out += `<div class="modal-overlay" onclick="closeCloud()">
+      <div class="modal-sheet" onclick="event.stopPropagation()" style="border-top:1px solid ${ac}44;max-height:85vh;display:flex;flex-direction:column">
+        <div class="modal-header">
+          <div><div class="modal-sublabel" style="color:${ac}">Sync con Claude</div><div class="modal-title">Exportar / Importar</div></div>
+          <button class="modal-close" onclick="closeCloud()">✕</button>
+        </div>
+        <div class="tabs">
+          <button class="tab${cloudTab==='export'?' active':''}" style="${cloudTab==='export'?`border-color:${ac};background:${ac}22;color:${ac}`:''}" onclick="setCloudTab('export')">📤 Exportar</button>
+          <button class="tab${cloudTab==='import'?' active':''}" style="${cloudTab==='import'?`border-color:${ac};background:${ac}22;color:${ac}`:''}" onclick="setCloudTab('import')">📥 Importar</button>
+        </div>
+        ${cloudTab==='export'?`
+          <div style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.6">Copiá este código y pegáselo a Claude con lo que querés cambiar.</div>
+          <div class="export-box">${exportData}</div>
+          <button class="btn" style="background:${ac};color:#fff;margin-bottom:0" onclick="copyExport()">📋 Copiar código</button>
+        `:`
+          <div style="font-size:13px;color:#888;margin-bottom:12px;line-height:1.6">Pegá acá el código que te mandó Claude con la rutina actualizada.</div>
+          <textarea class="import-area" id="import-text" placeholder="Pegá el JSON acá..."></textarea>
+          <div id="import-msg"></div>
+          <button class="btn" style="background:${ac};color:#fff;margin-bottom:0" onclick="doImport()">📥 Importar datos</button>
+        `}
+      </div>
+    </div>`;
+  }
+
+  return out;
+}
+
+// ─── ACTIONS ─────────────────────────────────────────────────────────────────
+function attachEvents() {}
+
+function selectDay(i) { selectedDay=i; phase='idle'; view='home'; render(); }
+function goHome() { view='home'; phase='idle'; stopElapsed(); render(); }
+function goHistory() { view='history'; render(); }
+
+function openEdit(i) { editingExIdx=i; render(); }
+function closeEdit() { editingExIdx=null; render(); }
+function saveEdit() {
+  const w=parseFloat(document.getElementById('ed-weight').value)||0;
+  const r=parseInt(document.getElementById('ed-rest').value)||45;
+  const s=parseInt(document.getElementById('ed-sets').value)||3;
+  const rp=document.getElementById('ed-reps').value||'10-12';
+  plan[selectedDay].exercises[editingExIdx]={...plan[selectedDay].exercises[editingExIdx],weight:w,rest:r,sets:s,reps:rp};
+  savePlan(plan); editingExIdx=null; render();
+}
+
+function openMedia_home(i) { mediaExIdx=i; render(); }
+function openMedia(i) { mediaExIdx=i; render(); }
+function closeMedia() { mediaExIdx=null; render(); }
+
+function openCloud() { showCloud=true; cloudTab='export'; render(); }
+function closeCloud() { showCloud=false; render(); }
+function setCloudTab(t) { cloudTab=t; render(); }
+function copyExport() {
+  const data = JSON.stringify({version:2,exportedAt:new Date().toISOString(),plan,history},null,2);
+  navigator.clipboard.writeText(data).then(()=>{
+    const btn = document.querySelector('.modal-sheet .btn');
+    if(btn){btn.textContent='✅ ¡Copiado!';btn.style.background='#1AE84A';btn.style.color='#000';setTimeout(()=>{btn.textContent='📋 Copiar código';btn.style.background='#A855F7';btn.style.color='#fff';},2500);}
+  });
+}
+function doImport() {
+  const txt = document.getElementById('import-text').value.trim();
+  const msg = document.getElementById('import-msg');
+  try {
+    const parsed=JSON.parse(txt);
+    if(!parsed.plan||!parsed.history) throw new Error();
+    plan=parsed.plan; history=parsed.history; savePlan(plan); saveHistory(history);
+    msg.className='msg-ok'; msg.textContent='✅ ¡Importado!';
+    setTimeout(()=>{showCloud=false;render();},1200);
+  } catch(_) { msg.className='msg-err'; msg.textContent='⚠️ No pude leer ese código.'; }
+}
+
+// Clock tick
+setInterval(()=>{ const c=document.querySelector('.clock'); if(c) c.textContent=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); },10000);
+
+// Initial render
+render();
+</script>
+</body>
+</html>
